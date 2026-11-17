@@ -15,30 +15,69 @@ class Motor:
         self.regras.append(regra)
     
     def verificar(self, fatos):
-        resultados = [regra.conclusao for regra in self.regras if regra.atende(fatos)]
-        
-        if resultados:
-            print("=-= Veredito de Antifraude =-=")
-            for res in resultados:
-                print(f"=> {res}")
-        else:
-            print("=-= Sem alerta de fraudes =-=")
+        fatos = set(fatos)
+        novas_conclusoes = True
+
+        while novas_conclusoes:
+            novas_conclusoes = False
+
+            # Percorre as regras
+            for regra in self.regras:
+                if regra.atende(fatos):
+
+                    # Evita adicionar conclusões repetidas
+                    if regra.conclusao not in fatos:
+
+                        fatos.add(regra.conclusao)
+                        novas_conclusoes = True
+
+                        print(f"[Nova Conclusão] {regra.conclusao}")
+        return fatos
 
 
-# Iniciando Programa
+# EXEMPLO
 if __name__ == "__main__":
     motor = Motor()
 
     # Adicionando regras
     motor.add_regra(
-        Regra(["cartao_recusado_varias_vezes", "valor_alto"], 
-              "BLOQUEADO: Suspeita de teste de cartão (Carding).")
-    )
-    motor.add_regra(
-        Regra(["endereco_entrega_diferente", "compra_madrugada", "eletronico_alto_valor"], 
-              "ANÁLISE MANUAL: Alto risco de roubo de conta.")
+        Regra(
+            ["cartao_recusado_varias_vezes"],
+            "suspeita_de_fraude"
+        )
     )
 
-    # Testando cenários
-    motor.verificar({"endereco_entrega_diferente", "compra_madrugada", "eletronico_alto_valor"})
-    motor.verificar({"cartao_recusado_varias_vezes", "valor_alto"})
+    motor.add_regra(
+        Regra(
+            ["suspeita_de_fraude", "valor_alto"],
+            "bloquear_compra"
+        )
+    )
+
+    motor.add_regra(
+        Regra(
+            ["suspeita_de_fraude", "compra_madrugada"],
+            "solicitar_verificacao"
+        )
+    )
+
+    motor.add_regra(
+        Regra(
+            ["endereco_entrega_diferente", "eletronico_alto_valor"],
+            "risco_de_roubo_de_conta"
+        )
+    )
+
+
+    # Fatos conhecidos (exemplo: Cliente B)
+    fatos = {
+        "cartao_recusado_varias_vezes",
+        "valor_alto",
+        "compra_madrugada"
+    }
+
+
+    print("=-= Veredito de Antifraude =-=")
+
+    # Executa o motor de inferência
+    resultado = motor.verificar(fatos)
